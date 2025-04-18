@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/bytedance/sonic"
 	"github.com/openai/openai-go"
 	"time"
 )
@@ -20,8 +21,9 @@ type OllamaChat struct {
 		Role    string `json:"role"`
 		Content string `json:"content"`
 	} `json:"messages"`
-	Stream    bool   `json:"stream"`
-	KeepAlive string `json:"keep_alive"`
+	Stream    bool                   `json:"stream"`
+	KeepAlive string                 `json:"keep_alive"`
+	Format    sonic.NoCopyRawMessage `json:"format"`
 	Options   struct {
 		NumCtx int64 `json:"num_ctx"`
 	} `json:"options"`

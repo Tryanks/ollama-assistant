@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
@@ -9,6 +10,7 @@ import (
 )
 
 func ChatCompletion(c *fiber.Ctx) error {
+	// Parse ollama request
 	var chat OllamaChat
 	err := c.BodyParser(&chat)
 	if err != nil {
@@ -16,11 +18,33 @@ func ChatCompletion(c *fiber.Ctx) error {
 		return err
 	}
 
+	// Create OpenAI request
 	params := openai.ChatCompletionNewParams{
 		Model:    chat.Model,
 		Messages: chat.GetOpenaiMessages(),
 	}
 
+	// Structured outputs
+	if chat.Format != nil {
+		if bytes.Equal(chat.Format, []byte("json")) {
+			params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+				OfText: &openai.ResponseFormatTextParam{
+					Type: "json_object",
+				},
+			}
+		} else {
+			params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+				OfJSONSchema: &openai.ResponseFormatJSONSchemaParam{
+					JSONSchema: openai.ResponseFormatJSONSchemaJSONSchemaParam{
+						Name:   "ollama_chat",
+						Schema: chat.Format,
+					},
+				},
+			}
+		}
+	}
+
+	// Streaming responses
 	if !chat.Stream {
 		return nonStreamingChatCompletion(c, chat.Model, params)
 	}
