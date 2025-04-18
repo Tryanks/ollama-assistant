@@ -24,6 +24,25 @@ func ChatCompletion(c *fiber.Ctx) error {
 		Messages: chat.GetOpenaiMessages(),
 	}
 
+	// Tool calling
+	if chat.Tools != nil && !chat.Stream {
+		// TODO:            ^ I don't know how to compatible this with Streaming
+		params.Tools = make([]openai.ChatCompletionToolParam, len(chat.Tools))
+		for k, tool := range chat.Tools {
+			params.Tools[k] = openai.ChatCompletionToolParam{
+				Function: openai.FunctionDefinitionParam{
+					Name:        tool.Function.Name,
+					Description: openai.String(tool.Function.Description),
+					Parameters: openai.FunctionParameters{
+						"type":       tool.Function.Parameters.Type,
+						"properties": tool.Function.Parameters.Properties,
+						"required":   tool.Function.Parameters.Required,
+					},
+				},
+			}
+		}
+	}
+
 	// Structured outputs
 	if chat.Format != nil {
 		if bytes.Equal(chat.Format, []byte{'j', 's', 'o', 'n'}) {
@@ -97,5 +116,21 @@ func nonStreamingChatCompletion(c *fiber.Ctx, model string, params openai.ChatCo
 	}
 
 	response := NewOllamaStreamResponse(model)
+	toolCalls := resp.Choices[0].Message.ToolCalls
+	if toolCalls != nil {
+		for _, toolCall := range toolCalls {
+			tool := ToolCall{}
+			tool.Name = toolCall.Function.Name
+			err := sonic.UnmarshalString(toolCall.Function.Arguments, tool.Arguments)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			response.Message.AddToolCall(tool)
+		}
+		if response.Message.ToolCalls != nil {
+			return c.JSON(response.Call())
+		}
+	}
 	return c.JSON(response.End(resp.Choices[0].Message.Content))
 }

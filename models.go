@@ -24,6 +24,7 @@ type OllamaChat struct {
 	Stream    bool                   `json:"stream"`
 	KeepAlive string                 `json:"keep_alive"`
 	Format    sonic.NoCopyRawMessage `json:"format"`
+	Tools     []Tool                 `json:"tools"`
 	Options   struct {
 		NumCtx int64 `json:"num_ctx"`
 	} `json:"options"`
@@ -44,10 +45,24 @@ func (c *OllamaChat) GetOpenaiMessages() []openai.ChatCompletionMessageParamUnio
 	return messages
 }
 
+type Tool struct {
+	Type     string `json:"type"`
+	Function struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Parameters  struct {
+			Type       string                            `json:"type"`
+			Properties map[string]sonic.NoCopyRawMessage `json:"properties"`
+			Required   []string                          `json:"required"`
+		} `json:"parameters"`
+	} `json:"function"`
+}
+
 type OllamaStreamResponse struct {
 	Model              string        `json:"model"`
 	CreatedAt          string        `json:"created_at"`
 	Message            OllamaMessage `json:"message"`
+	DoneReason         string        `json:"done_reason,omitempty"`
 	Done               bool          `json:"done"`
 	TotalDuration      int64         `json:"total_duration,omitempty"`
 	LoadDuration       int64         `json:"load_duration,omitempty"`
@@ -70,6 +85,9 @@ func NewOllamaStreamResponse(model string) OllamaStreamResponse {
 func (c *OllamaStreamResponse) Next(char string) OllamaStreamResponse {
 	c.CreatedAt = time.Now().Format(time.RFC3339)
 	c.Message.Content = char
+	if c.DoneReason != "stop" {
+		c.Message.ToolCalls = nil
+	}
 	return *c
 }
 
@@ -78,7 +96,26 @@ func (c *OllamaStreamResponse) End(char string) OllamaStreamResponse {
 	return c.Next(char)
 }
 
+func (c *OllamaStreamResponse) Call() OllamaStreamResponse {
+	c.DoneReason = "stop"
+	return c.End("")
+}
+
 type OllamaMessage struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role      string `json:"role"`
+	Content   string `json:"content"`
+	ToolCalls []struct {
+		Function ToolCall `json:"function"`
+	} `json:"tool_calls,omitempty"`
+}
+
+func (m *OllamaMessage) AddToolCall(call ToolCall) {
+	m.ToolCalls = append(m.ToolCalls, struct {
+		Function ToolCall `json:"function"`
+	}{Function: call})
+}
+
+type ToolCall struct {
+	Name      string                            `json:"name"`
+	Arguments map[string]sonic.NoCopyRawMessage `json:"arguments"`
 }
