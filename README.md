@@ -6,6 +6,9 @@ A Go-based web service that provides an Ollama-compatible API interface while us
 
 - **Ollama-Compatible API**: Implements Ollama's API endpoints for seamless integration with existing Ollama clients
 - **OpenAI Backend**: Uses OpenAI's official Go client to communicate with OpenAI's API
+- **Multi-Provider Support**: Connect to multiple OpenAI-compatible API providers simultaneously
+  - Automatically routes requests to the appropriate provider based on the model name
+  - Supports different base URLs and API keys for each provider
 - **Advanced AI Features Support**:
   - Streaming responses
   - Tool calling (function calling)
@@ -25,16 +28,25 @@ This project requires environment variables to be set up before running. Follow 
 
 2. Open the `.env` file and add the following values:
    ```
+   # Legacy configuration (still supported)
    API_BASE_URL=https://api.openai.com
    API_KEY=<KEY>
+
+   # New configuration format for multiple providers
+   # Format: OPENAI_PROVIDERS=url1, key1; url2, key2;...
+   OPENAI_PROVIDERS=
+
+   # Server configuration
    HOST_SERVE=0.0.0.0
    PORT_SERVE=11434
    ```
 
    Replace `<KEY>` with your actual OpenAI API key.
 
-   - `API_BASE_URL`: The base URL for the OpenAI API
-   - `API_KEY`: Your OpenAI API key
+   - `API_BASE_URL` and `API_KEY`: Legacy configuration for a single OpenAI provider
+   - `OPENAI_PROVIDERS`: New configuration format for multiple OpenAI providers (takes precedence if set)
+     - Format: `OPENAI_PROVIDERS=url1, key1; url2, key2;...`
+     - Example: `OPENAI_PROVIDERS=https://api.openai.com, sk-xxx; https://api.another-provider.com, sk-yyy`
    - `HOST_SERVE`: The host address to bind the server to (default: 0.0.0.0)
    - `PORT_SERVE`: The port to run the server on (default: 11434)
 
@@ -70,7 +82,8 @@ The following is the development roadmap for this project:
 
 - [x] **Basic OpenAI Integration**: Core functionality with OpenAI API
 - [x] **Environment Configuration**: Support for configurable host and port settings
-- [ ] **Multi API Provider Support**: Integration with Anthropic Claude and other providers
+- [x] **Multi OpenAI Provider Support**: Support for multiple OpenAI-compatible API providers
+- [ ] **Other API Provider Support**: Integration with Anthropic Claude and other non-OpenAI providers
 - [ ] **Local Ollama Fallback**: Option to use local Ollama when API is unavailable
 - [ ] **Performance Optimization**: Improved response handling and memory management
 - [ ] **Docker Support**: Containerized deployment option

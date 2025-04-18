@@ -22,12 +22,12 @@ type OpenAIChatProvider struct {
 }
 
 // NewOpenAIChatProvider creates a new OpenAI chat provider
-func NewOpenAIChatProvider(model string) *OpenAIChatProvider {
+func NewOpenAIChatProvider(model string, baseURL string, apiKey string) *OpenAIChatProvider {
 	return &OpenAIChatProvider{
 		model: model,
 		provider: openai.NewClient(
-			option.WithBaseURL(getEnv("API_BASE_URL")),
-			option.WithAPIKey(getEnv("API_KEY")),
+			option.WithBaseURL(baseURL),
+			option.WithAPIKey(apiKey),
 		),
 	}
 }
@@ -158,5 +158,33 @@ func (p *OpenAIChatProvider) nonStreamingChatCompletion(c *fiber.Ctx, params ope
 
 // GetProvider returns a ChatProvider for the given model name
 func GetProvider(model_name string) ChatProvider {
-	return NewOpenAIChatProvider(model_name)
+	// Lock the providers mutex to ensure thread safety
+	providersMutex.RLock()
+	defer providersMutex.RUnlock()
+
+	// If no providers are available, initialize them
+	if len(providers) == 0 {
+		// Release the read lock before calling ScanModels
+		providersMutex.RUnlock()
+		ScanModels()
+		// Re-acquire the read lock
+		providersMutex.RLock()
+
+		// If still no providers, use default
+		if len(providers) == 0 {
+			return NewOpenAIChatProvider(model_name, getEnv("API_BASE_URL"), getEnv("API_KEY"))
+		}
+	}
+
+	// Find the provider that supports this model
+	for _, provider := range providers {
+		for _, model := range provider.Models {
+			if model == model_name {
+				return NewOpenAIChatProvider(model_name, provider.BaseURL, provider.APIKey)
+			}
+		}
+	}
+
+	// If no provider supports this model, use the first provider
+	return NewOpenAIChatProvider(model_name, providers[0].BaseURL, providers[0].APIKey)
 }

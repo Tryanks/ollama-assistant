@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
 
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
@@ -44,4 +45,65 @@ func getEnvWithDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// OpenAIProvider represents an OpenAI API provider with its base URL and API key
+type OpenAIProvider struct {
+	BaseURL string
+	APIKey  string
+	Models  []string
+}
+
+// GetOpenAIProviders parses the OPENAI_PROVIDERS environment variable and returns a slice of OpenAIProvider
+// Format: OPENAI_PROVIDERS=url1, key1; url2, key2;...
+func GetOpenAIProviders() []OpenAIProvider {
+	providersStr := getEnv("OPENAI_PROVIDERS")
+
+	// If OPENAI_PROVIDERS is not set, use the legacy API_BASE_URL and API_KEY
+	if providersStr == "" {
+		return []OpenAIProvider{
+			{
+				BaseURL: getEnv("API_BASE_URL"),
+				APIKey:  getEnv("API_KEY"),
+				Models:  []string{},
+			},
+		}
+	}
+
+	var providers []OpenAIProvider
+
+	// Split by semicolon to get each provider
+	providerParts := strings.Split(providersStr, ";")
+	for _, part := range providerParts {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+
+		// Split by comma to get URL and key
+		urlAndKey := strings.SplitN(part, ",", 2)
+		if len(urlAndKey) != 2 {
+			fiberlog.Warn("Invalid provider format:", part)
+			continue
+		}
+
+		providers = append(providers, OpenAIProvider{
+			BaseURL: strings.TrimSpace(urlAndKey[0]),
+			APIKey:  strings.TrimSpace(urlAndKey[1]),
+			Models:  []string{},
+		})
+	}
+
+	// If no valid providers were found, fall back to legacy configuration
+	if len(providers) == 0 {
+		return []OpenAIProvider{
+			{
+				BaseURL: getEnv("API_BASE_URL"),
+				APIKey:  getEnv("API_KEY"),
+				Models:  []string{},
+			},
+		}
+	}
+
+	return providers
 }
