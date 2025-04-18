@@ -84,14 +84,14 @@ The application is available as a Docker image from GitHub Container Registry:
 
 ```bash
 # Pull the latest image
-docker pull ghcr.io/Tryanks/ollama-assistant:latest
+docker pull ghcr.io/tryanks/ollama-assistant:latest
 
 # Run the container
 docker run -d \
   -p 11434:11434 \
   -e API_KEY=your_openai_api_key \
   -e API_BASE_URL=https://api.openai.com \
-  ghcr.io/Tryanks/ollama-assistant:latest
+  ghcr.io/tryanks/ollama-assistant:latest
 ```
 
 ### Building the Docker Image Locally
