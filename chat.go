@@ -26,7 +26,7 @@ func ChatCompletion(c *fiber.Ctx) error {
 
 	// Structured outputs
 	if chat.Format != nil {
-		if bytes.Equal(chat.Format, []byte("json")) {
+		if bytes.Equal(chat.Format, []byte{'j', 's', 'o', 'n'}) {
 			params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
 				OfText: &openai.ResponseFormatTextParam{
 					Type: "json_object",
