@@ -15,6 +15,7 @@ func main() {
 
 	app.Get("/", Running)
 	app.Get("/api/tags", ModelList)
+	app.Get("/api/refresh-models", RefreshModels)
 	app.Post("/api/chat", ChatCompletion)
 
 	err := app.Listen(fmt.Sprintf("%s:%s",

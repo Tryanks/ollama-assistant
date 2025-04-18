@@ -1,13 +1,69 @@
 package main
 
 import (
+	"context"
 	"github.com/bytedance/sonic"
+	"github.com/gofiber/fiber/v2/log"
 	"github.com/openai/openai-go"
+	"github.com/openai/openai-go/option"
+	"slices"
+	"strings"
+	"sync"
 	"time"
+)
+
+// Global variable to store the model list
+var (
+	cachedModelList Tags
+	modelListMutex  sync.RWMutex
 )
 
 type Tags struct {
 	Models []Model `json:"models"`
+}
+
+// ScanModels scans the available models and updates the cached model list
+func ScanModels() error {
+	// Create a temporary OpenAI client to get the list of models
+	client := openai.NewClient(
+		option.WithBaseURL(getEnv("API_BASE_URL")),
+		option.WithAPIKey(getEnv("API_KEY")),
+	)
+
+	pages, err := client.Models.List(context.Background())
+	if err != nil {
+		log.Error("Failed to scan models:", err)
+		return err
+	}
+
+	uniques := make(map[string]struct{})
+	for _, model := range pages.Data {
+		if ModelBlockFilter.BlockString(model.ID) {
+			continue
+		}
+		uniques[model.ID] = struct{}{}
+	}
+
+	newTags := Tags{
+		Models: []Model{},
+	}
+	for model := range uniques {
+		newTags.Models = append(newTags.Models, Model{
+			Name:  model,
+			Model: model,
+		})
+	}
+	slices.SortFunc(newTags.Models, func(a, b Model) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+
+	// Update the cached model list
+	modelListMutex.Lock()
+	cachedModelList = newTags
+	modelListMutex.Unlock()
+
+	log.Info("Model list updated, found", len(newTags.Models), "models")
+	return nil
 }
 
 type Model struct {

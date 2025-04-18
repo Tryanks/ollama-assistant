@@ -52,7 +52,13 @@ By default, the server will start on port 11434 (the same port used by the offic
 
 - `GET /`: Check if the service is running
 - `GET /api/tags`: List available OpenAI chat models (filtered to exclude non-chat models)
+- `GET /api/refresh-models`: Refresh the cached model list and return the updated list
 - `POST /api/chat`: Chat completion endpoint that accepts Ollama-format requests and returns Ollama-format responses
+
+## Performance Optimizations
+
+- **Cached Model List**: The application scans the model list only once at startup and caches it for future requests, improving performance by reducing API calls to OpenAI
+- **Manual Refresh**: Use the `/api/refresh-models` endpoint to manually refresh the cached model list when needed
 
 ## Usage with Ollama Clients
 

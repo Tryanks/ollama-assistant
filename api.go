@@ -2,8 +2,6 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"slices"
-	"strings"
 )
 
 func Running(c *fiber.Ctx) error {
@@ -11,28 +9,22 @@ func Running(c *fiber.Ctx) error {
 }
 
 func ModelList(c *fiber.Ctx) error {
-	pages, err := provider.Models.List(c.Context())
+	// Return the cached model list
+	modelListMutex.RLock()
+	defer modelListMutex.RUnlock()
+	return c.JSON(cachedModelList)
+}
+
+// RefreshModels refreshes the model list and returns the updated list
+func RefreshModels(c *fiber.Ctx) error {
+	// Scan models and update the cached list
+	err := ScanModels()
 	if err != nil {
 		return err
 	}
-	uniques := make(map[string]struct{})
-	for _, model := range pages.Data {
-		if ModelBlockFilter.BlockString(model.ID) {
-			continue
-		}
-		uniques[model.ID] = struct{}{}
-	}
-	tags := Tags{
-		Models: []Model{},
-	}
-	for model := range uniques {
-		tags.Models = append(tags.Models, Model{
-			Name:  model,
-			Model: model,
-		})
-	}
-	slices.SortFunc(tags.Models, func(a, b Model) int {
-		return strings.Compare(a.Name, b.Name)
-	})
-	return c.JSON(tags)
+
+	// Return the updated model list
+	modelListMutex.RLock()
+	defer modelListMutex.RUnlock()
+	return c.JSON(cachedModelList)
 }
