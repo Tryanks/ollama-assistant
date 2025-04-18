@@ -11,8 +11,7 @@ import (
 
 func ChatCompletion(c *fiber.Ctx) error {
 	// Parse ollama request
-	var chat OllamaChat
-	err := c.BodyParser(&chat)
+	chat, err := BindOllamaChat(c.BodyParser)
 	if err != nil {
 		log.Error(err)
 		return err

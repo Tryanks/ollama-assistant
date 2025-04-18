@@ -30,6 +30,11 @@ type OllamaChat struct {
 	} `json:"options"`
 }
 
+func BindOllamaChat(binder func(any) error) (chat OllamaChat, err error) {
+	err = binder(&chat)
+	return
+}
+
 func (c *OllamaChat) GetOpenaiMessages() []openai.ChatCompletionMessageParamUnion {
 	messages := make([]openai.ChatCompletionMessageParamUnion, len(c.Messages))
 	for k, message := range c.Messages {
