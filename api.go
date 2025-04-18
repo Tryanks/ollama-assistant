@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"github.com/gofiber/fiber/v2"
 	"slices"
 	"strings"
@@ -12,7 +11,7 @@ func Running(c *fiber.Ctx) error {
 }
 
 func ModelList(c *fiber.Ctx) error {
-	pages, err := provider.Models.List(context.Background())
+	pages, err := provider.Models.List(c.Context())
 	if err != nil {
 		return err
 	}

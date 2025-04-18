@@ -2,12 +2,10 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"github.com/bytedance/sonic"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/log"
 	"github.com/openai/openai-go"
-	"time"
 )
 
 func ChatCompletion(c *fiber.Ctx) error {
@@ -24,67 +22,56 @@ func ChatCompletion(c *fiber.Ctx) error {
 	}
 
 	if !chat.Stream {
-		resp, err := provider.Chat.Completions.New(context.Background(), params)
-		if err != nil {
-			log.Error("Failed to create completion:", err)
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "failed to generate response",
-			})
-		}
-
-		response := OllamaStreamResponse{
-			Model:     chat.Model,
-			CreatedAt: time.Now().Format(time.RFC3339),
-			Message: OllamaMessage{
-				Role:    "assistant",
-				Content: resp.Choices[0].Message.Content,
-			},
-			Done: true,
-		}
-
-		return c.JSON(response)
+		return nonStreamingChatCompletion(c, chat.Model, params)
 	}
 
-	c.Set("Content-Type", "application/x-ndjson")
+	return streamingChatCompletion(c, chat.Model, params)
+}
 
-	stream := provider.Chat.Completions.NewStreaming(context.Background(), params)
-	acc := openai.ChatCompletionAccumulator{}
+func streamingChatCompletion(c *fiber.Ctx, model string, params openai.ChatCompletionNewParams) error {
+	stream := provider.Chat.Completions.NewStreaming(c.Context(), params)
 
 	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
 		enc := sonic.ConfigDefault.NewEncoder(w)
-		resp := OllamaStreamResponse{
-			Model: chat.Model,
-			Message: OllamaMessage{
-				Role:    "assistant",
-				Content: "",
-			},
-		}
+		response := NewOllamaStreamResponse(model)
+
 		for stream.Next() {
 			chunk := stream.Current()
-			acc.AddChunk(chunk)
 
 			char := ""
 			if len(chunk.Choices) > 0 {
 				char = chunk.Choices[0].Delta.Content
 			}
 
-			err = enc.Encode(resp.Next(char))
+			err := enc.Encode(response.Next(char))
 			if err != nil {
 				log.Warn(err)
 			}
 			_ = w.Flush()
 		}
 
-		err = enc.Encode(resp.End(""))
+		err := enc.Encode(response.End(""))
 		if err != nil {
 			log.Warn(err)
 		}
 		_ = w.Flush()
 	})
 
-	if stream.Err() != nil {
-		log.Error(stream.Err())
+	err := stream.Err()
+	if err != nil {
+		log.Error(err)
 	}
 
-	return nil
+	return err
+}
+
+func nonStreamingChatCompletion(c *fiber.Ctx, model string, params openai.ChatCompletionNewParams) error {
+	resp, err := provider.Chat.Completions.New(c.Context(), params)
+	if err != nil {
+		log.Error("Failed to create completion:", err)
+		return err
+	}
+
+	response := NewOllamaStreamResponse(model)
+	return c.JSON(response.End(resp.Choices[0].Message.Content))
 }

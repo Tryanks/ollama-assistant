@@ -55,6 +55,16 @@ type OllamaStreamResponse struct {
 	EvalDuration       int64         `json:"eval_duration,omitempty"`
 }
 
+func NewOllamaStreamResponse(model string) OllamaStreamResponse {
+	return OllamaStreamResponse{
+		Model: model,
+		Message: OllamaMessage{
+			Role:    "assistant",
+			Content: "",
+		},
+	}
+}
+
 func (c *OllamaStreamResponse) Next(char string) OllamaStreamResponse {
 	c.CreatedAt = time.Now().Format(time.RFC3339)
 	c.Message.Content = char
