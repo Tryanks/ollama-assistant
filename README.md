@@ -70,6 +70,11 @@ The following is the development roadmap for this project:
 - [ ] **Docker Support**: Containerized deployment option
 - [ ] **Simple Web UI**: Basic web interface for testing and configuration
 
+## Knowledge
+
+> The code in this repository was (almost entirely) written by the JetBrains AI Assistant itself through its ollama integration.  
+> Except for the initial phase of basic chat API translation.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
