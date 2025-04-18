@@ -56,7 +56,7 @@ By default, the server will start on port 11434 (the same port used by the offic
 
 ## Usage with Ollama Clients
 
-You can use any Ollama client with this service. Simply point the client to this service's URL instead of the official Ollama server.
+You can use any Ollama client with this service. Simply point the client to this service's URL instead of the official Ollama service.
 
 ## Roadmap
 
