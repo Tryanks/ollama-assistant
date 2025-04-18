@@ -76,6 +76,52 @@ By default, the server will start on port 11434 (the same port used by the offic
 
 You can use any Ollama client with this service. Simply point the client to this service's URL instead of the official Ollama service.
 
+## Docker Support
+
+### Using the Docker Image
+
+The application is available as a Docker image from GitHub Container Registry:
+
+```bash
+# Pull the latest image
+docker pull ghcr.io/Tryanks/ollama-assistant:latest
+
+# Run the container
+docker run -d \
+  -p 11434:11434 \
+  -e API_KEY=your_openai_api_key \
+  -e API_BASE_URL=https://api.openai.com \
+  ghcr.io/Tryanks/ollama-assistant:latest
+```
+
+### Building the Docker Image Locally
+
+You can build the Docker image locally using the provided Dockerfile:
+
+```bash
+docker build -t ollama-assistant .
+docker run -d -p 11434:11434 -e API_KEY=your_openai_api_key ollama-assistant
+```
+
+### Automated Builds with GitHub Actions
+
+This repository includes a GitHub Actions workflow that automatically builds and publishes the Docker image to GitHub Container Registry (ghcr.io) when:
+- Changes are pushed to the main branch
+- A new tag is created (prefixed with 'v')
+- The workflow is manually triggered
+
+To set up automated builds:
+
+1. Create a GitHub Personal Access Token (PAT) with `read:packages` and `write:packages` scopes
+2. Add the token as a repository secret named `GITHUB_PERSONAL_ACCESS_TOKEN`
+3. Push changes to the main branch or create a new tag to trigger the workflow
+
+The workflow will build and tag the image with:
+- The semantic version (for tags)
+- The branch name (for branch pushes)
+- The commit SHA
+- 'latest' tag for the most recent build
+
 ## Roadmap
 
 The following is the development roadmap for this project:
@@ -83,10 +129,10 @@ The following is the development roadmap for this project:
 - [x] **Basic OpenAI Integration**: Core functionality with OpenAI API
 - [x] **Environment Configuration**: Support for configurable host and port settings
 - [x] **Multi OpenAI Provider Support**: Support for multiple OpenAI-compatible API providers
+- [x] **Docker Support**: Containerized deployment option
 - [ ] **Other API Provider Support**: Integration with Anthropic Claude and other non-OpenAI providers
 - [ ] **Local Ollama Fallback**: Option to use local Ollama when API is unavailable
 - [ ] **Performance Optimization**: Improved response handling and memory management
-- [ ] **Docker Support**: Containerized deployment option
 - [ ] **Simple Web UI**: Basic web interface for testing and configuration
 
 ## Knowledge
