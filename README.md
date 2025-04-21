@@ -103,25 +103,6 @@ docker build -t ollama-assistant .
 docker run -d -p 11434:11434 -e API_KEY=your_openai_api_key ollama-assistant
 ```
 
-### Automated Builds with GitHub Actions
-
-This repository includes a GitHub Actions workflow that automatically builds and publishes the Docker image to GitHub Container Registry (ghcr.io) when:
-- Changes are pushed to the main branch
-- A new tag is created (prefixed with 'v')
-- The workflow is manually triggered
-
-To set up automated builds:
-
-1. Create a GitHub Personal Access Token (PAT) with `read:packages` and `write:packages` scopes
-2. Add the token as a repository secret named `GITHUB_PERSONAL_ACCESS_TOKEN`
-3. Push changes to the main branch or create a new tag to trigger the workflow
-
-The workflow will build and tag the image with:
-- The semantic version (for tags)
-- The branch name (for branch pushes)
-- The commit SHA
-- 'latest' tag for the most recent build
-
 ## Roadmap
 
 The following is the development roadmap for this project:
